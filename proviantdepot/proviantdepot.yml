@@ -1,0 +1,48 @@
+domain: proviantdepot
+start_date: 2019-10-05
+end_date: 2020-06-30
+#end_date: 2019-10-10
+resolution: 5
+timestep: H
+crs: "epsg:32632"
+timezone: 1
+results_dir: results
+
+input_data:
+  grids:
+    dir: data
+
+  meteo:
+    dir: meteo
+    format: csv
+    crs: "epsg:32632"
+
+output_data:
+  timeseries:
+    format: csv
+
+meteo:
+  precipitation_phase:
+    method: wet_bulb_temp
+    threshold_temp: 273.65
+    temp_range: 0.5
+
+  precipitation_correction:
+    - method: kochendorfer
+      gauge: us_un
+
+snow:
+  model: cryolayers
+
+  cryolayers:
+    cold_holding_capacity: 0.03
+
+  albedo:
+    min: 0.55
+    max: 0.85
+    cold_snow_decay_timescale: 480
+    melting_snow_decay_timescale: 160
+
+  liquid_water_content:
+    method: pore_volume_fraction
+    max: 0.06
