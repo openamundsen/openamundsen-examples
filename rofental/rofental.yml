@@ -1,0 +1,573 @@
+domain: rofental
+start_date: 2019-01-01
+end_date: 2022-12-31
+resolution: 100 # spatial resolution (m)
+timestep: "3H" # temporal resolution as a pandas-compatible frequency string (e.g., "H", "3H", "D")
+crs: "epsg:32632" # CRS of the input grids
+timezone: 1 # timezone of the model domain (difference to UTC in h)
+results_dir: results/rofental # directory for storing the model outputs
+
+# Input data configuration
+input_data:
+  grids:
+    dir: data/rofental # location of the input grids (DEM, ROI etc.)
+
+  meteo:
+    dir: data/rofental/meteo/csv # location of the meteorological input data
+    format: csv # input format (csv or netcdf)
+    #crs: "epsg:32632" # CRS of the station coordinates (when using CSV format)
+    bounds: grid
+    aggregate_when_downsampling: false
+
+
+# Output data configuration
+output_data:
+  # Configuration for gridded outputs
+  grids:
+    format: netcdf # output format (ascii, geotiff or netcdf)
+    variables:
+      # Temperature (monthly mean)
+      - var: meteo.temp # internal variable name
+        name: temp_month # NetCDF output variable name
+        freq: M # write frequency (if not specified, write every timestep)
+        agg: mean # aggregation function ("sum", "mean" or empty)
+
+      # Precipitation (monthly sum)
+      - var: meteo.precip # internal variable name
+        name: precip_month # NetCDF output variable name
+        freq: M # write frequency (if not specified, write every timestep)
+        agg: sum  # aggregation function ("sum", "mean" or empty)
+
+      # SWE (monthly mean)
+      - var: snow.swe
+        name: swe_month
+        freq: M
+        agg: mean
+
+      # Snow depth (monthly mean)
+      - var: snow.depth
+        name: snowdepth_month
+        freq: M
+        agg: mean
+
+      # SWE (certain dates)
+      - var: snow.swe
+        name: swe_dates
+        dates:
+        - 2020-04-11 12:00
+        - 2020-06-02 12:00
+
+      # Snow depth (certain dates)
+      - var: snow.depth
+        name: snowdepth_dates
+        dates:
+        - 2020-04-11 12:00
+        - 2020-06-02 12:00
+
+      # Snowmelt (monthly sum)
+      # - var: snow.melt
+      #   name: snowmelt_month
+      #   freq: M
+      #   agg: sum
+
+      # SWE (daily)
+      # - var: snow.swe
+      #   freq: D
+      #
+      # - var: snow.depth
+      #   freq: D
+
+      # Evapotranspiration (monthly sum)
+      # - var: evapotranspiration.evapotranspiration
+      #   freq: M
+      #   agg: sum
+
+      # - var: snow.sublimation
+      #   freq: M
+      #   agg: sum
+
+      # - var: snow.canopy_sublimation
+      #   freq: M
+      #   agg: sum
+
+      # - var: meteo.temp
+      #   freq: D
+      #   agg: mean
+      # - var: meteo.precip
+      #   freq: D
+      #   agg: sum
+      # - var: meteo.rel_hum
+      #   freq: D
+      #   agg: mean
+      # - var: meteo.sw_in
+      #   freq: D
+      #   agg: mean
+      # - var: meteo.lw_in
+      #   freq: D
+      #   agg: mean
+      # - var: meteo.wind_speed
+      #   freq: D
+      #   agg: mean
+
+  # Time series (point) outputs configuration
+  timeseries:
+    format: csv # output format (csv or netcdf)
+    write_freq: M
+    add_default_points: true
+    add_default_variables: true
+#    points:
+#      - x: 638139
+#        y: 5181920
+#      - x: 642579
+#        y: 5193069
+#        name: testpoint
+#      - x: 637235
+#        y: 5192569
+
+    # variables:
+    #   - var: evapotranspiration.evapotranspiration
+    #   - var: surface.turbulent_exchange_coeff
+
+meteo:
+  # Spatial interpolation parameters
+  interpolation:
+    temperature:
+      trend_method: fixed # use fixed monthly temperature lapse rates
+      extrapolate: true
+      lapse_rate: # (°C m-1)
+        - -0.0026 # J
+        - -0.0035 # F
+        - -0.0047 # M
+        - -0.0053 # A
+        - -0.0052 # M
+        - -0.0053 # J
+        - -0.0049 # J
+        - -0.0047 # A
+        - -0.0042 # S
+        - -0.0033 # O
+        - -0.0035 # N
+        - -0.0031 # D
+
+    precipitation:
+      trend_method: fractional # use fixed monthly fractional precipitation gradients
+      extrapolate: true
+      lapse_rate: # (m-1)
+        - 0.00048 # J
+        - 0.00046 # F
+        - 0.00041 # M
+        - 0.00033 # A
+        - 0.00028 # M
+        - 0.00025 # J
+        - 0.00024 # J
+        - 0.00025 # A
+        - 0.00028 # S
+        - 0.00033 # O
+        - 0.00041 # N
+        - 0.00046 # D
+
+    humidity:
+      trend_method: fixed # use fixed monthly dew point temperature lapse rates
+      extrapolate: true
+      lapse_rate:
+        - -0.0044 # J
+        - -0.0046 # F
+        - -0.0049 # M
+        - -0.0048 # A
+        - -0.0046 # M
+        - -0.0047 # J
+        - -0.0043 # J
+        - -0.0042 # A
+        - -0.0045 # S
+        - -0.0044 # O
+        - -0.0047 # N
+        - -0.0046 # D
+
+    cloudiness:
+      day_method: clear_sky_fraction # use the ratio of measured vs. potential shortwave radiation to calculate cloudiness
+      night_method: humidity # "constant" keep the last cloudiness value of the day during nighttime, "humidity" xxx
+      allow_fallback: true # xxx
+
+    wind_speed:
+      trend_method: regression
+      extrapolate: false
+
+  # Precipitation phase determination parameters
+  precipitation_phase:
+    method: wet_bulb_temp # use wet-bulb temperature for precipitation phase determination
+    threshold_temp: 273.65 # threshold temperature (K) in which 50% of precipitation falls as snow
+    temp_range: 1. # temperature range in which mixed precipitation can occur
+
+  # Parameters for adjusting precipitation for wind-induced undercatch and snow redistribution
+  precipitation_correction:
+    #- method: constant_scf
+    #  scf: 1.25
+    #- method: kochendorfer # use the Kochendorfer et al. (2017) transfer functions
+    #  gauge: us_un # gauge-specific transfer function to use according to Kochendorfer et al. (2017, Table 3)
+    - method: wmo
+      gauge: hellmann
+    #- method: srf # apply an additional precalculated spatially distributed snow redistribution factor (SRF)
+
+  # Radiation parameters
+  radiation:
+    snow_emissivity: 0.99
+    cloud_emissivity: 0.976
+    rock_emission_factor: 0.01
+    ozone_layer_thickness: 0.0035
+    atmospheric_visibility: 25000.
+    single_scattering_albedo: 0.9
+    clear_sky_albedo: 0.0685
+    num_shadow_sweeps: 1
+
+  measurement_height:
+    temperature: 2 # temperature measurement height (m)
+    wind: 10 # wind measurement height (m)
+
+  stability_correction: false # adjust turbulent fluxes for atmospheric stability
+  stability_adjustment_parameter: 5. # adjustment parameter for atmospheric stability correction
+
+
+# Snow parameters
+snow:
+  model: cryolayers # snow scheme (multilayer or cryolayers)
+  thermal_conductivity: 0.24 # snow thermal conductivity (W m-1 K-1)
+  roughness_length: 0.01 # roughness length of snow-covered ground (m)
+  measurement_height_adjustment: false # adjust the temperature measurement height for snow depth
+  snow_cover_fraction_depth_scale: 1.e-6 # snow cover fraction depth scale (m)
+
+
+  # Parameters for the cryo layer model
+  cryolayers:
+    transition:
+      old_snow: 200. # new snow -> old snow transition (density, kg m-3)
+      firn: 10 # old snow -> firn transition (calendar month)
+      ice: 900. # firn -> ice transition (density, kg m-3)
+    use_single_snow_albedo: true # xxx
+    cold_holding_capacity: 0.05 # cold holding capacity (as a fraction of the layer SWE) and refreezing factor for the cold content approach by Braun (1984)
+    refreezing_factor: 1. # fraction of available energy that is used for building up cold content and refreezing liquid water
+    surface_heat_flux: -2. # surface heat flux for snow-covered conditions (W m-2)
+
+  # Albedo parameters
+  albedo:
+    method: snow_age
+    min: 0.55 # minimum snow albedo
+    max: 0.85 # maximum snow albedo
+    cold_snow_decay_timescale: 480 # albedo decay timescale for cold (T < 0 °C) snow (h)
+    melting_snow_decay_timescale: 200 # albedo decay timescale for melting snow (h)
+    decay_timescale_determination_temperature: surface # use surface temperature to distinguish between cold and melting snow
+    refresh_snowfall: 0.5 # snowfall amount for resetting albedo to the maximum value (kg m-2 h-1)
+    refresh_method: binary # binary or continuous
+    firn: 0.4 # firn albedo (constant)
+    ice: 0.2 # ice albedo (constant)
+
+  # Snow compaction parameters
+  compaction:
+    method: anderson # anderson or empirical
+
+    # Parameters for method "empirical"
+    timescale: 200 # snow compaction timescale (h)
+    max_cold_density: 300 # maximum density for cold (T < 0 °C) snow (kg m-3)
+    max_melting_density: 500 # maximum density for melting snow (kg m-3)
+
+  # Liquid water content
+  liquid_water_content:
+    method: pore_volume_fraction # pore_volume_fraction or mass_fraction
+    max: 0.03 # maximum liquid water content as a fraction of the total pore volume or mass
+
+
+  # Melt parameters
+  melt:
+    method: energy_balance # melt method (energy_balance, temperature_index or enhanced_temperature_index)
+    threshold_temp: 273.15 # threshold temperature for the temperature index methods (K)
+    degree_day_factor: 1.2 # degree day factor for the temperature index methods (kg m-2 d-1 K-1)
+    albedo_factor: 0.1 # albedo factor for the enhanced temperature index method (m2 kg m-2 W-1 d-1)
+
+soil: # Soil parameters for FSM soil module (not used for FAO evapotranspiration)
+  thickness:
+    - 0.1
+    - 0.2
+    - 0.4
+    - 0.8
+  sand_fraction: 0.6
+  clay_fraction: 0.3
+  init_moisture_content: 0.5
+  init_temp: 285
+  saturated_soil_surface_conductance: 0.01
+  roughness_length: 0.1
+  albedo: 0.15
+
+canopy:
+  enabled: false
+  extinction_coefficient: 0.71
+  temperature_scaling_coefficient: 0.8
+  canopy_flow_index_coefficient: 0.9
+  spherical_ice_particle_radius: 500.e-6
+  kinematic_air_viscosity: 1.3e-5
+  max_interception_storage_coefficient: 4.4
+  exposure_coefficient_coefficient: 0.010
+  degree_day_factor: 5.
+
+evapotranspiration:
+  enabled: false
+  min_crop_coefficient: 0.175
+  grass_albedo: 0.23
+  grass_emissivity: 0.985
+  sealed_albedo: 0.4
+  sealed_emissivity: 0.92
+  mean_wind_speed: 2.
+  mean_min_humidity: 45.
+  surface_soil_layer_evaporation_depth: 0.125
+
+land_cover:
+  classes:
+    # Water (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-512.html)
+    1:
+      crop_coefficient_type: single
+      crop_coefficients:
+        - 1.25
+        - 0.65
+        - 1.25
+      plant_date: 1
+      growth_stage_lengths:
+        - 0
+        - 183
+        - 0
+        - 183
+      max_height: 0
+      rooting_depth: .nan
+      depletion_fraction: .nan
+      is_water_body: true
+    # Bare rock (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-332.html)
+    2:
+      is_sealed: true
+      max_sealed_interception: 0.935
+      max_height: 1.9
+      depletion_fraction: .nan
+      rooting_depth: .nan
+    # Settlement (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-111.html)
+    3:
+      is_sealed: true
+      max_sealed_interception: 0.935
+      max_height: 1.9
+      depletion_fraction: .nan
+      rooting_depth: .nan
+    # Pasture (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-231.html)
+    4:
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 0.30
+        - 0.90
+        - 0.80
+      plant_date: 60
+      growth_stage_lengths:
+        - 10
+        - 20
+        - 210
+        - 30
+      max_height: 0.225
+      rooting_depth: 0.5
+      depletion_fraction: 0.6
+    # Coniferous forest (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-312.html)
+    5:
+      is_forest: true
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 0.95
+        - 0.95
+        - 0.95
+      plant_date: 1
+      growth_stage_lengths:
+        - 0
+        - 0
+        - 366
+        - 0
+      max_height: 26.
+      scale_height: false
+      rooting_depth: 1.25
+      depletion_fraction: 0.7
+      leaf_area_index:
+        min: 3.8
+        max: 5.1
+        effective_add: 3.2
+    # Deciduous forest (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-311.html)
+    6:
+      is_forest: true
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 0.5
+        - 1.05
+        - 0.6
+      plant_date: 60
+      growth_stage_lengths:
+        - 20
+        - 70
+        - 120
+        - 60
+      max_height: 24.8
+      scale_height: false
+      rooting_depth: 2.05
+      depletion_fraction: 0.5
+      leaf_area_index:
+        min: 0.5
+        max: 4.4
+        effective_add: 1.9
+    # Mixed forest (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-313.html)
+    # (ET parameters currently the same as for coniferous forest)
+    7:
+      is_forest: true
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 0.95
+        - 0.95
+        - 0.95
+      plant_date: 1
+      growth_stage_lengths:
+        - 0
+        - 0
+        - 366
+        - 0
+      max_height: 26.
+      scale_height: false
+      rooting_depth: 1.25
+      depletion_fraction: 0.7
+      leaf_area_index:
+        min: 2.0
+        max: 4.7
+        effective_add: 2.5
+    # Arable land
+    8:
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 0.15
+        - 1.10
+        - 0.25
+      plant_date: 120
+      growth_stage_lengths:
+        - 30
+        - 40
+        - 50
+        - 25
+      max_height: 2.
+      rooting_depth: 1.35
+      depletion_fraction: 0.55
+    # Natural grassland (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-321.html)
+    # TODO: currently uses the same parameters as for pastures; should be adjusted
+    9:
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 0.30
+        - 0.90
+        - 0.80
+      plant_date: 60
+      growth_stage_lengths:
+        - 10
+        - 20
+        - 210
+        - 30
+      max_height: 0.225
+      rooting_depth: 0.5
+      depletion_fraction: 0.6
+    # Transitional zone (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-324.html)
+    # (assumed to be non-leaf dropping with 25% soil coverage)
+    10:
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 1.20
+        - 1.20
+        - 1.20
+      plant_date: 1
+      growth_stage_lengths:
+        - 0
+        - 0
+        - 366
+        - 0
+      max_height: 3.
+      rooting_depth: 0.5
+      depletion_fraction: 0.5
+      is_sparse: true
+      sparse_vegetation_fraction: 0.25
+    # Alpine vegetation (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-322.html)
+    # TODO: currently uses the same parameters as for pastures; should be adjusted
+    11:
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 0.30
+        - 0.90
+        - 0.80
+      plant_date: 60
+      growth_stage_lengths:
+        - 10
+        - 20
+        - 210
+        - 30
+      max_height: 0.225
+      rooting_depth: 0.5
+      depletion_fraction: 0.6
+    # Wetland (https://land.copernicus.eu/user-corner/technical-library/corine-land-cover-nomenclature-guidelines/html/index-clc-411.html)
+    # TODO: currently uses the same parameters as for pastures; should be adjusted
+    12:
+      crop_coefficient_type: dual
+      crop_coefficients:
+        - 0.30
+        - 0.90
+        - 0.80
+      plant_date: 60
+      growth_stage_lengths:
+        - 10
+        - 20
+        - 210
+        - 30
+      max_height: 0.225
+      rooting_depth: 0.5
+      depletion_fraction: 0.6
+
+liveview:
+  enabled: false
+  cols: 5
+  width: 1200
+  height: 800
+  variables:
+    - var: meteo.temp
+      min: 255
+      max: 280
+    - var: meteo.precip
+      min: 0
+      max: 5
+    - var: meteo.snowfall
+      min: 0
+      max: 5
+    - var: meteo.rainfall
+      min: 0
+      max: 5
+    - var: meteo.rel_hum
+      min: 30
+      max: 100
+    - var: meteo.wind_speed
+      min: 0
+      max: 10
+    - var: meteo.sw_in
+      min: 0
+      max: 1200
+    - var: meteo.sw_out
+      min: 0
+      max: 800
+    - var: meteo.lw_in
+      min: 150
+      max: 350
+    - var: meteo.lw_out
+      min: 200
+      max: 500
+    - var: snow.num_layers
+      min: 0
+      max: 3
+    - var: snow.swe
+      min: 0
+      max: 100
+    - var: snow.depth
+      min: 0
+      max: 1
+    - var: surface.albedo
+      min: 0
+      max: 1
+    - var: surface.temp
+      min: 255
+      max: 280
