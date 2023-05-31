@@ -1,4 +1,4 @@
-# Proviantdepot
+# Model setup Rofental
 
 openAMUNDSEN spatial setup for the research catchment Rofental (Ötztal Alps,
 Austria), spatial resolutions 50m and 100m, meteorological and validation data from 2017 to 2022.
