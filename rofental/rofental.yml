@@ -205,7 +205,7 @@ meteo:
     #  gauge: us_un # gauge-specific transfer function to use according to Kochendorfer et al. (2017, Table 3)
     - method: wmo
       gauge: hellmann
-    #- method: srf # apply an additional precalculated spatially distributed snow redistribution factor (SRF)
+    - method: srf # apply an additional precalculated spatially distributed snow redistribution factor (SRF)
 
   # Radiation parameters
   radiation:
