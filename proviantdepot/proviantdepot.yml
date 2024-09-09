@@ -3,7 +3,7 @@ start_date: 2019-10-05
 end_date: 2020-06-30
 #end_date: 2019-10-10
 resolution: 5
-timestep: H
+timestep: h
 crs: "epsg:32632"
 timezone: 1
 results_dir: results
