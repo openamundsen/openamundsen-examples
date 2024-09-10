@@ -10,10 +10,10 @@ results_dir: results
 
 input_data:
   grids:
-    dir: data
+    dir: grids
 
   meteo:
-    dir: meteo
+    dir: ../data/rofental/meteo/csv
     format: csv
     crs: "epsg:32632"
 

@@ -5,15 +5,15 @@ resolution: 100 # spatial resolution (m)
 timestep: "3h" # temporal resolution as a pandas-compatible frequency string (e.g., "h", "3h", "D")
 crs: "epsg:32632" # CRS of the input grids
 timezone: 1 # timezone of the model domain (difference to UTC in h)
-results_dir: results/rofental # directory for storing the model outputs
+results_dir: results # directory for storing the model outputs
 
 # Input data configuration
 input_data:
   grids:
-    dir: data/rofental # location of the input grids (DEM, ROI etc.)
+    dir: grids # location of the input grids (DEM, ROI etc.)
 
   meteo:
-    dir: data/rofental/meteo/csv # location of the meteorological input data
+    dir: ../data/rofental/meteo/csv # location of the meteorological input data
     format: csv # input format (csv or netcdf)
     #crs: "epsg:32632" # CRS of the station coordinates (when using CSV format)
     bounds: grid
