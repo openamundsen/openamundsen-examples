@@ -12,4 +12,5 @@ Instructions to run the examples:
 3. Run the example setups as outlined in the readme files contained in the individual
    subdirectories.
 
-This repository will be updated with additional data sets in the near future.
+Sources for the meteorological and snow measurements in this data set:
+https://doi.org/10.5880/fidgeo.2023.037.
