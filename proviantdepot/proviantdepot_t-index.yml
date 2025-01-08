@@ -1,0 +1,38 @@
+domain: proviantdepot
+start_date: 2019-10-05
+end_date: 2020-06-30
+resolution: 5
+timestep: D
+crs: "epsg:32632"
+timezone: 1
+results_dir: results
+
+input_data:
+  grids:
+    dir: grids
+
+  meteo:
+    dir: ../data/rofental/meteo-daily/csv
+    format: csv
+    crs: "epsg:32632"
+
+output_data:
+  timeseries:
+    format: csv
+
+meteo:
+  precipitation_phase:
+    method: temp
+    threshold_temp: 275.15
+    temp_range: 2.
+
+  precipitation_correction:
+    - method: constant_scf
+      scf: 1.2
+
+snow:
+  model: cryolayers
+
+  melt:
+    method: temperature_index
+    degree_day_factor: 6.0
