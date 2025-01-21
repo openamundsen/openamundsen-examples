@@ -7,7 +7,7 @@ config = oa.read_config('rofental.yml')
 
 # Calculate openness-based snow redistribution factor field based on the
 # parameters by Hanzer et al. (2016)
-srf_file = Path('grids/srf_rofental_50.asc')
+srf_file = oa.util.raster_filename('srf', config)
 if not srf_file.exists():
     print('Calculating openness...')
     dem_file = oa.util.raster_filename('dem', config)
